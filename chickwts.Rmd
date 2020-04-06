@@ -1,0 +1,47 @@
+---
+title: "Chicken Weights"
+author: "Dr. Sulove Koirala"
+date: "3/12/2020"
+output:
+  github_document: default
+  html_preview: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+We are going to do analysis on "Chick Weights". It is available inbuit in most versions of R. The name of the dataset is chickwts. In this dataset chicks were allocated into six different groups with each group being given different feed. After six weeks, the chicks were weighed and their weight in grams are tabulated. We are going to analyse the data. The data is very old (1948). Therefore the weight gain of chickens after six months should not be shocking for us as those were the standard weights during that time.  
+
+## Visualization
+To analyse data with groups, boxplot is the most prefereed one. ggplot package makes a great boxplot, so we are going to use it to construct it. 
+
+But first things, first. Let's see the structure and head of the data. 
+
+```{r}
+head(chickwts)
+str(chickwts)
+```
+
+Now the visualization. 
+
+```{r message=FALSE}
+library(ggplot2)
+ggplot(chickwts)+
+  aes(feed, weight, fill = feed)+ 
+  geom_boxplot(notch = T,
+               notchwidth = 0.5, 
+               outlier.color = "Red",
+               outlier.shape = 10,
+               outlier.size = 2)+
+    theme_minimal()+
+    labs(x = "Weight (after six weeks)", y = "Type of Feed", title = "Weight of chickens on different feeds")
+```
+
+The boxplot shows that sunflower and casein feeds are clear winner in tearms of weight gain. Most of the data falls inside those boxes. The highest weight gain is by the chicken which had eaten sunflower. It can be seen as an outlier. One of the most notable thing we noticed is that feeding horsebean is not recommended for optimal weight gain in six weeks old chicken. 
+
+## Source and References
+Anonymous (1948) Biometrika, 35, 214.
+
+McNeil, D. R. (1977) Interactive Data Analysis. New York: Wiley

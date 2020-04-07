@@ -1,0 +1,75 @@
+---
+title: "Chances of Graduate Admission"
+author: "Dr. Sulove Koirala"
+date: "4/6/2020"
+output: pdf_document 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+The dataset contains GRE score, TOEFL score, GPA, SOP rating etc. of prospective graduate students. We are going to see which paramater might play a greater role in the chance of getting admission. 
+
+### Loading Packages
+```{r}
+library (ggplot2)
+library (gridExtra)
+library (ggcorrplot)
+```
+
+## Loading and Cleaning the data
+There is not much cleaning to do. We are just going to remove the Serial Number as it has no role in the analysis. 
+
+```{r}
+Admission_Predict <- read.csv("R:/Datasets/Admission_Predict.csv")
+head(Admission_Predict)
+Admission_Predict$Serial.No. = NULL # That should do it
+```
+
+## Correlation Plot
+This should provide the straight answer to what we are looking for. We are going to use ggcorrplot, which will create a matrix of correlation.
+
+```{r}
+admission = cor(Admission_Predict)
+ggcorrplot(admission, lab = T )
+```
+
+It is obvious from the graph that there is greater correlation between Chances of Admission and CGPA. So, to have a higher chance of admission we need to have a good CGPA. Also, GRE and TOEFL plays a significant role. The least (although not insignificant) graded during selection seems to be Letters of Reocmmendation. Other things we can note here is higher GRE score is correlated with high TOEFL and CGPA. 
+
+## Other Visualizations
+```{r}
+gre = ggplot(Admission_Predict)+ 
+    aes(GRE.Score, Chance.of.Admit, colour = GRE.Score)+ 
+    geom_point()
+
+Toefl = ggplot(Admission_Predict)+ 
+    aes(TOEFL.Score, Chance.of.Admit, colour = TOEFL.Score)+ 
+    geom_point()
+
+CGPA = ggplot(Admission_Predict)+ 
+    aes(CGPA, Chance.of.Admit, colour = CGPA)+ 
+    geom_point()
+
+#We are going to combine the plots into one by using GridExtra package, which we have loaded in the begining. 
+
+grid.arrange(gre, Toefl, CGPA, nrow = 3)
+
+    ```
+
+Finally, we visualize the rating of University responsible for the chance of graduate admission. 
+
+```{r}
+ggplot(Admission_Predict)+ 
+    aes(factor(University.Rating), Chance.of.Admit, fill = factor(University.Rating))+ 
+    geom_boxplot( color="blue",fill="blue", alpha=0.2,  notch=TRUE, notchwidth = 0.8,outlier.colour="red", outlier.fill="red", outlier.size=3)+
+    labs(x = "University Rating")
+```
+As expected, the chances of Admission in higher ranked universities are slim. 
+
+
+##Bibiliography 
+
+Mohan S Acharya, Asfia Armaan, Aneeta S Antony : A Comparison of Regression Models for Prediction of Graduate Admissions, IEEE International Conference on Computational Intelligence in Data Science 2019
+

@@ -1,0 +1,131 @@
+---
+title: "Countries with highest rate of Deaths and Healed cases of Coronavirus (April 8, 2020)"
+author: "Dr. Sulove Koirala"
+date: "4/8/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+We are going to use a package to load a the latest data on coronavirus. It contains latest death rate and heal rate of coronavirus infection in different countries. 
+
+## Installing the packages 
+```{r, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+remotes::install_github("GuangchuangYu/nCov2019") #This package is required for loading the latest dataset
+```
+
+### Loading the required packages
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(nCov2019) #This the package we are talking about
+library(dplyr)
+```
+
+## First Step
+Till now we have not got any dataset. Therefore, we will use the following command to get the latest dataset. 
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+corona <- get_nCov2019(lang='en')
+```
+The corona dataset is a list containing various data, such daily cases in China. We will only extract the data that we need currently. 
+
+```{r}
+global = corona$global
+head(global)
+```
+
+## Data cleaning
+This is an important step. We are going to make the data in the format we are comfortable working with. Let's start with looking at it's structure. 
+
+```{r}
+str(global)
+```
+
+By looking at the structure, we see the deadRate and healRate are recognized as character. It will cause trouble later if we proceed without converting it into the numeric data. 
+
+```{r}
+global$deadRate = as.numeric(global$deadRate)
+global$healRate = as.numeric(global$healRate) #This command converts character to numeric form
+str(global)
+```
+
+We are going to visualize only the top 10 cases based on their death rate and heal rate. First, we have to sort the data. 
+
+```{r}
+drate = global [order (global$deadRate, decreasing = "T"),]  #Sorting deathrate
+hrate = global [order (global$healRate, decreasing = "T"),]  #Sorting healrate
+```
+Now let's take only top 10 cases from dr and hr.  
+```{r}
+dr = head (drate, n = 10)
+hr = head (hrate, n = 11) #We are adding 11 because there is a case named "NA" which comes in top 10. This is because of the manual errors in the dataset. Hope they fix it. We will remove it later when we are going to visualize the data. 
+head(dr)
+head(hr)
+```
+
+## Visualization
+The data can be visualized by ggplot. We have already loaded the library. 
+
+```{r}
+ggplot(dr)+ 
+  aes(reorder(name, -deadRate), deadRate)+
+  geom_bar(stat = "identity")+
+  labs(x = "Country", y = "Death Rate", title = "Countries with Highest Death Rates")+
+  geom_text(aes(reorder(name, -deadRate), deadRate, label = deadRate), vjust = -0.4)+
+   theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+  
+```
+```{r}
+hr = na.omit(hr) #To remove the NA data from hr
+ggplot(hr)+ 
+  aes(reorder(name, -healRate), healRate)+
+  geom_bar(stat = "identity")+
+  labs(x = "Country", y = "Heal Rate", title = "Countries with Highest Heal Rates")+
+  geom_text(aes(reorder(name, -healRate), healRate, label = healRate), vjust = -0.2)+
+   theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+```
+
+We can see that China has the highest heal rate, whereas Angola has the highest death rate. However, this visualization does not represent the true picture of the COVID cases. For eg. in Angola there are only 7 confirmed cases with 2 deaths. This does not represent the true case of COVID-19 as other countries which are suffering the worst are not spotted in the graph. Therefore we are going to filter the data and keep only the cases which has significant number of deaths (>50) or confirmed cases (>1000). 
+
+We will use dplyr to filter the case. We will also construct the barchart. 
+
+```{r}
+newdr = filter(drate, drate$confirm > 1000 | drate$dead > 50 )
+newhr = filter(hrate, hrate$confirm > 1000)
+finaldr = head(newdr, n = 10)
+finalhr = head(newhr, n = 10)
+```
+
+```{r}
+ggplot(finaldr)+
+  aes(reorder(name, -deadRate), deadRate)+
+  geom_point(  size=12, color="orange", fill=alpha("orange", 0.3), alpha=0.7, shape=21, stroke=1)+
+  geom_text(aes(reorder(name, -deadRate), deadRate, label = deadRate))+
+  geom_bar(stat = "identity", width = 0.04, alpha = 0.5, fill = "orange")+
+  labs (x = "Country", y = "Death Rate", title = "Countries with Highest Death Rates (cases > 1000 or deaths > 50")+
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+```
+
+```{r}
+ggplot(finalhr)+
+  aes(reorder(name, -healRate), healRate)+
+  geom_point(  size=12, color="green", fill=alpha("green", 0.3), alpha=0.7, shape=21, stroke=1)+
+  geom_text(aes(reorder(name, -healRate), healRate, label = healRate))+
+  geom_bar(stat = "identity", width = 0.04, alpha = 0.5, fill = "green")+
+  labs (x = "Country", y = "Heal Rate", title = "Countries with Highest Heal Rates (cases > 1000)")
+```
+
+
+Therefore, Italy and Netherlands seems to be having worst situation while China seems to be in a good position. 
+
+
+## Bibliography
+
+Tianzhi Wu, Erqiang Hu, Xijin Ge*, Guangchuang Yu*. Open-source analytics tools for studying the COVID-19 coronavirus outbreak. medRxiv, 2020.02.25.20027433. doi: https://doi.org/10.1101/2020.02.25.20027433
+

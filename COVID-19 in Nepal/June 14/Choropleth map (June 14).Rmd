@@ -1,0 +1,83 @@
+---
+title: "Choropleth  Map (COVID-19, Nepal)"
+author: "Dr. Sulove Koirala"
+date: "6/14/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+We are going to make a choropleth map showing the total number of cases of Coronavirus in districts of Nepal.
+
+## Loading the required libraries
+```{r message=FALSE}
+library(ggplot2)
+library(rgdal)
+library(readr)
+library(dplyr)
+```
+
+## Importing the dataset and mapfile
+```{r}
+# Map file
+Nepal_map = readOGR("https://github.com/sulovek/Data-Analysis-Projects/raw/master/Datasets/nepal_map.geojson") 
+Nepal_map = Nepal_map[order(Nepal_map$DISTRICT, decreasing = F),]
+plot(Nepal_map)
+
+# Dataset containing confirmend cases (Districtwise)
+coronadata <- read_csv("https://raw.githubusercontent.com/sulovek/Data-Analysis-Projects/master/Datasets/map_june13.csv")
+
+# NA in zero values
+coronadata[coronadata == 0] <- NA
+```
+
+## Merging
+```{r}
+Nepal_map$CASES = coronadata$CONFIRMED
+```
+
+# Fortifying 
+```{r}
+Nepal_df = fortify(Nepal_map, region = "DISTRICT")
+```
+
+```{r}
+choro_dat <- data.frame(region=Nepal_map@data$DISTRICT,
+                        value=Nepal_map@data$CASES,
+                        stringsAsFactors=FALSE)
+```
+
+# For Labelling 
+```{r}
+centroids = setNames(do.call("rbind.data.frame", by(Nepal_df, Nepal_df$group, function(x) {Polygon(x[c('long', 'lat')])@labpt})), c('long', 'lat')) 
+district = data.frame(choro_dat$region)
+district = district[order(district$choro_dat.region),]
+centroids$label = district
+```
+
+# Plot
+```{r}
+Nepal_df = rename(Nepal_df, region = id)
+corona_map <- left_join(Nepal_df, choro_dat, by = "region")
+ggplot(corona_map, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = value), color = "white")+
+  scale_fill_continuous(name = "Cases", limits = c(0, 619), low="#ffeda0", high="#f03b20", guide="colorbar",na.value="#78c679")+
+  theme_void()+
+  labs(title = "COVID-19", subtitle = "June 14, 2020
+Dr. Sulove Koirala", caption = "Data Source: MoHP Nepal")+
+  with(centroids, annotate(geom="text", x = long, y = lat, label=label, size=2)) +
+  theme(
+    plot.title = element_text(color = "black", size = 16, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(color = "grey", hjust = 0.5),
+    plot.caption = element_text(face = "italic", hjust = 0.9, vjust = 1.5),
+    legend.position = "bottom")
+```
+
+
+## Bibiliography
+COVID 19 - Active Cases, Deaths and Recovered. (n.d.). Retrieved June 14, 2020, from https://kathmandupost.com/covid19
+
+

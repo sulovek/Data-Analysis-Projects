@@ -1,0 +1,88 @@
+---
+title: "COVID-19 Choropleth Map of Nepal"
+author: "Dr. Sulove Koirala"
+date: "5/29/2020"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+We are going to construct a choropleth map showing the confirmed cases of coronavirus in Nepal. If you have any question or suggestion, do not hesitate to email me.
+
+Email: sulovekoirala@gmail.com  
+
+
+## Loading the libraries
+```{r message=FALSE}
+library(rgdal) # For reading the shapefile 
+library(ggplot2) # For Visualization
+library(dplyr) # Data Wrangling
+```
+
+## Download the shapefile
+You can download the shapefile ("Nepal_Districts") and data (csv file) from my github link. 
+https://github.com/sulovek/Data-Analysis-Projects/tree/master/COVID-19%20in%20Nepal
+
+## Importing the shapefile and data
+```{r}
+setwd("R:/Datasets") # Here "R" is my drive name. I am setting working directory and adding the shapefile and corona data.  
+Nepal_shp = readOGR(dsn = "Nepal_Districts", layer = "Nepal_Districts", stringsAsFactors = FALSE) # Remember to extract the zip file and write the code as it is written here if working directory is already for this chunk. 
+Nepal_corona = read.csv("https://raw.githubusercontent.com/sulovek/Data-Analysis-Projects/master/COVID-19%20in%20Nepal/may31.csv")
+Nepal_corona[Nepal_corona == 0] <- NA   # Replacing Zero with NA
+```
+
+# Merge Cases in the Map
+```{r}
+Nepal_shp$CASES = Nepal_corona$Cases
+```
+
+# Fortify
+We will fortify the shape file because ggplot will only read the fortified data. 
+```{r}
+Nepal_df = fortify(Nepal_shp, region = "DISTRICT")
+```
+
+# Chloreopleth map
+```{r}
+choro_dat <- data.frame(region=Nepal_shp@data$DISTRICT,
+                        value=Nepal_shp@data$CASES,
+                        stringsAsFactors=FALSE)
+```
+
+# For Labelling 
+```{r}
+centroids = setNames(do.call("rbind.data.frame", by(Nepal_df, Nepal_df$group, function(x) {Polygon(x[c('long', 'lat')])@labpt})), c('long', 'lat')) 
+district = data.frame(choro_dat$region)
+district = district[order(district$choro_dat.region),] # Arranging the district name in ascending order
+centroids$label = district
+```
+
+# Plot
+```{r}
+Nepal_df = rename(Nepal_df, region = id)
+corona_map <- left_join(Nepal_df, choro_dat, by = "region")
+ggplot(corona_map, aes(long, lat, group = group))+
+  geom_polygon(aes(fill = value), color = "black")+
+  scale_fill_continuous(name = "Cases", low="yellow", high="red", 
+                        guide="colorbar",na.value="white")+
+  theme_void()+
+  labs(title = "COVID-19 Cases in Nepal (District wise)", subtitle = "May 31, 2020", caption = "Data Source: MoHP Nepal")+
+  with(centroids, annotate(geom="text", x = long, y = lat, label=label, size=1)) +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(color = "blue", hjust = 0.5),
+    plot.caption = element_text(face = "italic", hjust = 0.9, vjust = 1.5),
+    legend.position = "bottom"
+)
+
+```
+
+The plot in PDF file may not be clearly displayed. 
+
+# Bibiliography
+
+1. Tuladhar, A. (2017, April 30). Step-by-Step Choropleth Map in R: A case of mapping Nepal. Retrieved March 28, 2020, from https://medium.com/@anjesh/step-by-step-choropleth-map-in-r-a-case-of-mapping-nepal-7f62a84078d9 

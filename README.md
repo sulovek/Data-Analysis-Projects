@@ -1,6 +1,8 @@
 # Data-Analysis-Projects
 Welcome. Here you can find the data analysis/visualization of various datasets using R, Python, Tableau, Julia (upcoming). 
 
+![alt text](https://raw.githubusercontent.com/sulovek/Data-Analysis-Projects/master/R/Coronavirus%20Curve%20(Selected%20Countries)/Rplot01.jpeg)
+
 The analysis done using R can be found in Rmarkdown format. The codes and visualization can be downloaded in a PDF format. 
 
 Data analysis done in Python is kept in ipynb file which can be visible from the browser. 
